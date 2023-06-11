@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -6,40 +6,101 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
+  KeyboardAvoidingView,
+  ScrollView
 } from 'react-native';
-import {ActivityIndicator} from 'react-native-paper';
+import { ActivityIndicator } from 'react-native-paper';
+import { setUserInfo } from '../state/actions/userActions';
+import { useDispatch } from 'react-redux';
+import { GoogleSigninButton, GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin'
+import Icon from 'react-native-vector-icons/MaterialIcons'
+import Icon2 from 'react-native-vector-icons/FontAwesome'
+import Icon3 from 'react-native-vector-icons/Ionicons'
 
-const Login = ({navigation}) => {
+
+const Login = ({ navigation }) => {
+  const dispatch = useDispatch()
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [password, setPassword] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [error, setError] = useState('');
   const [isForgotPassword, setIsForgotPassword] = useState(false);
 
+  const signInWithGoogle = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      console.log(userInfo)
+      //this.setState({ userInfo });
+    } catch (error) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        // user cancelled the login flow
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        console.log({ error })
+        // operation (e.g. sign in) is in progress already
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        console.log({ error })
+        // play services not available or outdated
+      } else {
+        console.log({ error })
+        // some other error happened
+      }
+    }
+  }
+
+  const validateEmail = (email) => {
+    return String(email)
+      .toLowerCase()
+      .match(
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      );
+  };
+
+  const handleForgotPassword = async () => {
+    if (!validateEmail(email)) {
+      alert('Enter a valid email');
+      return
+    }
+    setLoading(true);
+    await fetch("http://146.190.205.245/api/collections/users/request-password-reset", {
+      method: "POST",
+      headers: {
+        "Content-Type": 'application/json'
+      },
+      body: JSON.stringify({
+        "email": email
+      })
+    }).then(res => res.text())
+      .then(res => {
+        setLoading(false);
+        navigation.navigate('Reset Password')
+        setEmail('')
+        setIsForgotPassword(false)
+      }).catch(err => { console.log("Fetch Error: ", err); setLoading(false) })
+  }
+
   const handleLogin = () => {
-    // if (email == 'kamran@gmail.com' && password == 'akmalbestkeeper') {
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      navigation.navigate('Home');
-    }, 2000);
-    // }
-  };
-
-  const handleRegister = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setIsRegistering(false);
-      setEmail('');
-      setName('');
-      setPassword('');
-    }, 2000);
-  };
-
-  const handleForgotPassword = () => {
-    // handle forgot password logic
+    fetch("http://146.190.205.245/api/collections/users/auth-with-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": 'application/json'
+      },
+      body: JSON.stringify({
+        "identity": email,
+        "password": password,
+      })
+    }).then(res => res.json())
+      .then(res => {
+        if (res.token) {
+          dispatch(setUserInfo({ ...res.record, token: res.token }))
+          navigation.replace('Home');
+        } else {
+          setError("Invalid Email or Password")
+        }
+        setLoading(false);
+      }).catch(err => console.log("Fetch Error: ", err))
   };
 
   useEffect(() => {
@@ -48,228 +109,239 @@ const Login = ({navigation}) => {
   }, [navigation]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logoContainer}>
-        <Image
-          style={styles.logo}
-          source={{
-            uri: 'data:image/png;base64,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',
-          }}
-        />
+    <View style={{ backgroundColor: '#031042', flex: 1 }}>
+      <Image
+        style={styles.logo}
+        source={require('../assets/logoHeader.jpg')} />
+      <View style={{ borderTopEndRadius: 120, overflow: 'hidden', flex: 1 }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40, backgroundColor: 'white' }}
+          showsVerticalScrollIndicator={false}>
+          <KeyboardAvoidingView style={styles.container}>
+            {isForgotPassword ? (
+              <View>
+                <Text style={[styles.title, { marginBottom: 20 }]}>FORGOT PASSWORD</Text>
+                <View style={styles.shadow}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Email"
+                    keyboardType="email-address"
+                    placeholderTextColor={"black"}
+                    autoCapitalize="none"
+                    onChangeText={setEmail}
+                    value={email}
+                  />
+                  <Icon name='email' size={22} style={{ position: 'absolute', left: 10 }} />
+                </View>
+                <TouchableOpacity
+                  disabled={loading}
+                  style={[styles.button, { marginTop: 0, alignSelf: 'stretch' }]}
+                  onPress={handleForgotPassword}>
+                  {loading ? (
+                    <ActivityIndicator size={18} color="white" />
+                  ) : (
+                    <Text style={styles.buttonText}>Submit</Text>)}
+                </TouchableOpacity>
+                <View
+                  style={[styles.link, { marginTop: 15 }]}
+                >
+                  <Text style={styles.linkText}>
+                    Back to
+                  </Text>
+                  <TouchableOpacity onPress={() => setIsForgotPassword(false)}>
+                    <Text style={[styles.linkText, { color: '#031042', fontWeight: 'bold', marginLeft: 5 }]}>
+                      Sign In.
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <View>
+                <Text style={styles.title}>SIGN IN</Text>
+                <Text style={styles.error}>{error}</Text>
+                <View style={styles.shadow}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Email"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    placeholderTextColor={"black"}
+                    onChangeText={setEmail}
+                    value={email}
+                  />
+                  <Icon name='email' size={22} style={{ position: 'absolute', left: 10 }} />
+                </View>
+                <View style={[styles.shadow, { marginBottom: 15 }]}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Password"
+                    secureTextEntry={!visible}
+                    placeholderTextColor={"black"}
+                    onChangeText={setPassword}
+                    value={password}
+                  />
+                  <Icon name='vpn-key' size={22} style={{ position: 'absolute', left: 10 }} />
+                  <Icon3 name={visible ? 'eye-off' : 'eye'} size={22} style={{ position: 'absolute', right: 10 }}
+                    onPress={() => setVisible(!visible)} />
+                </View>
+                <TouchableOpacity onPress={() => setIsForgotPassword(true)} style={{ alignSelf: 'flex-end' }}>
+                  <Text style={[styles.linkText, { color: '#031042', fontWeight: 'bold', marginLeft: 5 }]}>
+                    Forgot password?
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={handleLogin}>
+                  {loading ? (
+                    <ActivityIndicator size={18} color="white" />
+                  ) : (
+                    <Text style={styles.buttonText}>LOGIN</Text>
+                  )}
+                </TouchableOpacity>
+                <View style={styles.orContainer}>
+                  <View style={styles.line} />
+                  <Text style={styles.orText}>OR</Text>
+                  <View style={styles.line} />
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                  <TouchableOpacity style={styles.socialButton}>
+                    <Icon2 name="twitter" size={26} color="#00ACEE" />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.socialButton}>
+                    <Icon2 name="facebook" size={32} color="#3B5998" />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.socialButton}
+                    onPress={() => signInWithGoogle()}>
+                    <Icon2 name="google" size={26} color="#F7B529" />
+                  </TouchableOpacity>
+                  {/* <TouchableOpacity style={{ marginBottom: 10 }}>
+                    <GoogleSigninButton
+                      size={GoogleSigninButton.Size.Icon}
+                      style={styles.socialButton}
+                      color={'rgb(59,89,152)'}
+                    />
+                  </TouchableOpacity> */}
+                </View>
+                <View
+                  style={[styles.link]}
+                >
+                  <Text style={styles.linkText}>
+                    Don't have an account?
+                  </Text>
+                  <TouchableOpacity onPress={() => navigation.replace('UserType')}>
+                    <Text style={[styles.linkText, { color: '#031042', fontWeight: 'bold', marginLeft: 5 }]}>
+                      Register here.
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </KeyboardAvoidingView>
+        </ScrollView>
       </View>
-      {isRegistering ? (
-        <View>
-          <Text style={styles.title}>Register</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            onChangeText={setEmail}
-            value={email}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Name"
-            onChangeText={setName}
-            value={name}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            secureTextEntry
-            onChangeText={setPassword}
-            value={password}
-          />
-          <TouchableOpacity style={styles.button} onPress={handleRegister}>
-            {loading ? (
-              <ActivityIndicator size={18} color="white" />
-            ) : (
-              <Text style={styles.buttonText}>Register</Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.link}
-            onPress={() => setIsRegistering(false)}>
-            <Text style={styles.linkText}>
-              Already have an account? Login here.
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : isForgotPassword ? (
-        <View>
-          <Text style={styles.title}>Forgot Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            onChangeText={setEmail}
-            value={email}
-          />
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleForgotPassword}>
-            <Text style={styles.buttonText}>Submit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.link}
-            onPress={() => setIsForgotPassword(false)}>
-            <Text style={styles.linkText}>
-              Remembered your password? Login here.
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View>
-          <Text style={styles.title}>Login</Text>
-          <TouchableOpacity style={styles.socialButton}>
-            <Image
-              style={styles.socialIcon}
-              source={{
-                uri: 'https://www.facebook.com/images/fb_icon_325x325.png',
-              }}
-            />
-            <Text style={styles.socialButtonText}>Continue with Facebook</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialButton}>
-            <Image
-              style={styles.socialIcon}
-              source={{
-                uri: 'https://www.freepnglogos.com/uploads/google-logo-png/google-logo-png-webinar-optimizing-for-success-google-business-webinar-13.png',
-              }}
-            />
-            <Text style={styles.socialButtonText}>Continue with Google</Text>
-          </TouchableOpacity>
-          <View style={styles.orContainer}>
-            <View style={styles.line} />
-            <Text style={styles.orText}>Or</Text>
-            <View style={styles.line} />
-          </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            onChangeText={setEmail}
-            value={email}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            secureTextEntry
-            onChangeText={setPassword}
-            value={password}
-          />
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            {loading ? (
-              <ActivityIndicator size={18} color="white" />
-            ) : (
-              <Text style={styles.buttonText}>login</Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.link}
-            onPress={() => setIsForgotPassword(true)}>
-            <Text style={styles.linkText}>Forgot your password?</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.link}
-            onPress={() => setIsRegistering(true)}>
-            <Text style={styles.linkText}>
-              Don't have an account? Register here.
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#f7f7f7',
+    backgroundColor: 'white',
     paddingHorizontal: 20,
     paddingTop: 50,
   },
   logoContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
+    width: '100%',
+    margin: 0
   },
   logo: {
-    width: 200,
-    height: 50,
+    height: 100,
+    width: "100%",
+    resizeMode: 'cover'
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 10,
+    alignSelf: 'center',
+    color: '#031042',
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
     borderRadius: 10,
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    marginBottom: 10,
+    paddingLeft: 40,
+    paddingVertical: 15,
+    color: 'black',
+  },
+  shadow: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    justifyContent: 'center',
+    width: '100%',
+    marginBottom: 35,
+    elevation: 12,
+    shadowColor: 'black',
   },
   button: {
-    backgroundColor: '#0095f6',
-    borderRadius: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    backgroundColor: '#031042',
+    borderRadius: 25,
+    alignSelf: 'center',
+    paddingHorizontal: 60,
+    paddingVertical: 15,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 30,
   },
   buttonText: {
-    color: '#fff',
+    color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
   },
   socialButton: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    backgroundColor: '#ECEBE9',
+    borderRadius: 7,
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    elevation: 5,
+    shadowColor: 'black',
     alignItems: 'center',
     flexDirection: 'row',
+    marginRight: 10,
     marginBottom: 10,
   },
   socialIcon: {
-    width: 20,
-    height: 20,
+    width: 30,
+    height: 30,
     marginRight: 10,
   },
   socialButtonText: {
     color: '#000',
-    fontWeight: 'bold',
+    //fontWeight: 'bold',
     fontSize: 16,
+    color: 'black',
   },
   orContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginVertical: 30,
   },
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: '#ccc',
+    backgroundColor: 'black',
     marginHorizontal: 5,
   },
-  orText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#999',
-  },
   link: {
+    flexDirection: 'row',
     alignSelf: 'center',
-    marginTop: 20,
+    marginTop: 30,
   },
   linkText: {
-    color: '#999',
-    textDecorationLine: 'underline',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#a6a6a6'
   },
+  error: {
+    color: 'red',
+    marginBottom: 10,
+    textAlign: 'center'
+  }
 });
 
 export default Login;

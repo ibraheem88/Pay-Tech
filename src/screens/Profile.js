@@ -1,37 +1,51 @@
 import React from 'react';
-import {View, Text, StyleSheet, Image, TouchableOpacity} from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { useSelector } from 'react-redux';
+import Icon2 from 'react-native-vector-icons/Feather'
+import Icon3 from 'react-native-vector-icons/MaterialIcons'
+import Icon4 from 'react-native-vector-icons/MaterialCommunityIcons'
 
-const ProfileScreen = () => {
+const ProfileScreen = ({ navigation }) => {
+  const { user } = useSelector(state => state.user)
+  console.log(user)
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Image
-          source={{
-            uri: 'https://assets3.cbsnewsstatic.com/hub/i/r/2022/12/15/4decd348-d788-4774-b5a7-be53f05daf45/thumbnail/640x486/664038a6472a8c080a6d94d60ef45c85/ai1.png',
-          }}
-          style={styles.profileImage}
-        />
-        <Text style={styles.username}>Kamran Kiznim</Text>
-      </View>
-      <View style={styles.body}>
-        <TouchableOpacity style={styles.option}>
-          <Text style={styles.optionText}>Edit Profile</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.option}>
-          <Text style={styles.optionText}>Change Password</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.option}>
-          <Text style={styles.optionText}>Privacy Settings</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.option}>
-          <Text style={styles.optionText}>Notifications</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.option}>
-          <Text style={styles.optionText}>Payment Methods</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.option}>
-          <Text style={styles.optionText}>Language</Text>
-        </TouchableOpacity>
+      <View style={{ borderTopEndRadius: 40, borderTopStartRadius: 40, overflow: 'hidden', flex: 1 }}>
+        <View style={styles.header}>
+          <View>
+            <Image
+              source={{
+                uri: user.avatar?.length > 1 ? `http://146.190.205.245/api/files/_pb_users_auth_/${user.id}/${user.avatar}` : "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/1200px-Default_pfp.svg.png",
+              }}
+              style={styles.profileImage}
+            />
+            {user.verified && <Icon3 name='verified' size={24} color='green' style={{ position: 'absolute', right: -5, bottom: 15 }} />}
+          </View>
+          <Text style={styles.username}>{user.name}</Text>
+          <View style={{ flexDirection: 'row', marginTop: 10, alignItems: 'center' }}>
+            <Icon4 name='currency-rupee' size={22} color={"#FFA500"} />
+            <Text style={{ color: 'black', marginLeft: 10, fontSize: 16 }}>{user.points} PKR</Text>
+            <TouchableOpacity style={{ marginLeft: 20, backgroundColor: '#031042', borderRadius: 15, padding: 3 }}
+              onPress={() => navigation.navigate('Buy Coins')}>
+              <Icon2 name="plus" size={22} color={"white"} />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={styles.body}>
+          <TouchableOpacity style={styles.option} onPress={() => navigation.navigate('Edit Profile')}>
+            <Text style={styles.optionText}>Edit Profile</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.option} onPress={() => navigation.navigate('Change Password')}>
+            <Text style={styles.optionText}>Change Password</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.option} onPress={() => navigation.navigate('Terms')}>
+            <Text style={styles.optionText}>Terms and Conditions</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.option} onPress={() => navigation.navigate('Verify Account')}>
+            <Text style={styles.optionText}>Verify Account</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -39,14 +53,13 @@ const ProfileScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#031042', flex: 1, paddingTop: 10
   },
   header: {
     alignItems: 'center',
     paddingTop: 40,
     paddingBottom: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f8f8',
     borderBottomWidth: 1,
     borderBottomColor: '#e8e8e8',
   },
@@ -59,18 +72,22 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: 'black',
   },
   body: {
     paddingVertical: 20,
     paddingHorizontal: 30,
+    flex: 1,
+    backgroundColor: '#F5F5F4'
   },
   option: {
-    paddingVertical: 10,
+    paddingVertical: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#e8e8e8',
   },
   optionText: {
     fontSize: 16,
+    color: 'black',
   },
 });
 

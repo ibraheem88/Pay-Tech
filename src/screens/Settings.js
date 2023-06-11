@@ -1,7 +1,10 @@
-import React, {useState} from 'react';
-import {StyleSheet, Text, View, Switch, TouchableOpacity} from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, Switch, TouchableOpacity } from 'react-native';
+import { useSelector } from 'react-redux';
 
 const SettingsScreen = () => {
+  // const {user}=useSelector(state=>state.user)
+  // console.log(user)
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
@@ -13,11 +16,11 @@ const SettingsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Settings</Text>
+      {/* <Text style={styles.title}>Settings</Text> */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Notifications</Text>
         <Switch
-          trackColor={{false: '#767577', true: '#81b0ff'}}
+          trackColor={{ false: '#767577', true: '#81b0ff' }}
           thumbColor={notificationsEnabled ? '#f5dd4b' : '#f4f3f4'}
           onValueChange={toggleNotifications}
           value={notificationsEnabled}
@@ -26,7 +29,7 @@ const SettingsScreen = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Location</Text>
         <Switch
-          trackColor={{false: '#767577', true: '#81b0ff'}}
+          trackColor={{ false: '#767577', true: '#81b0ff' }}
           thumbColor={locationEnabled ? '#f5dd4b' : '#f4f3f4'}
           onValueChange={toggleLocation}
           value={locationEnabled}
@@ -35,7 +38,7 @@ const SettingsScreen = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Dark Mode</Text>
         <Switch
-          trackColor={{false: '#767577', true: '#81b0ff'}}
+          trackColor={{ false: '#767577', true: '#81b0ff' }}
           thumbColor={darkModeEnabled ? '#f5dd4b' : '#f4f3f4'}
           onValueChange={toggleDarkMode}
           value={darkModeEnabled}
@@ -51,12 +54,13 @@ const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F5F4',
     padding: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: 'black',
     marginBottom: 20,
   },
   section: {
@@ -69,18 +73,20 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
+    color: 'black',
   },
   button: {
-    backgroundColor: '#a3386c',
-    paddingVertical: 10,
-    borderRadius: 5,
+    backgroundColor: '#031042',
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    alignItems: 'center',
     marginTop: 20,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 18,
     fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: 16,
   },
 });
 
