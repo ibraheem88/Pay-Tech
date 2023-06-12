@@ -108,7 +108,7 @@ const Home = ({ navigation }) => {
 
   const getGigs = async (text) => {
     //setLoading(true);
-    fetch(`http://146.190.205.245/api/collections/gigs/records?page=1&perPage=10&filter=(name~'${text}' || description~'${text}')`, {
+    fetch(`http://146.190.205.245/api/collections/gigs/records?page=1&perPage=50&filter=(name~'${text}' || description~'${text}')`, {
       method: "GET",
       headers: {
         "Content-Type": 'application/json'
